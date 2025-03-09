@@ -1,21 +1,20 @@
 import { redirect } from "next/navigation";
-
+import Image from "next/image";
 import { getDrupalClient } from "@/utils/drupal/client";
 import { gql } from "urql";
 import { calculatePath } from "@/utils/drupal/calculate-path";
 
-async function getDrupalData({
-  params,
-  searchParams,
-}: {
+// ✅ Explicitly define the correct props structure
+interface PageProps {
   params: { slug: string[] };
   searchParams: Record<string, string>;
-}) {
+}
+
+async function getDrupalData({ params, searchParams }: { params: { slug: string[] }; searchParams: Record<string, string> }) {
   const GET_DRUPAL_CONTENT_ERROR = "Error fetching data from Drupal";
-  const promiseSlug = await params;
-  const promiseSearchParams = await searchParams;
-  console.log({promiseSearchParams});
-  const pathFromParams = promiseSlug.slug?.join("/");
+
+  // ✅ Ensure params is treated as an object, not a Promise
+  const pathFromParams = params.slug?.join("/");
 
   const drupalClient = await getDrupalClient();
   const { data, error } = await drupalClient.query(
@@ -99,7 +98,7 @@ async function getDrupalData({
     {
       path: calculatePath({
         path: pathFromParams,
-        token: promiseSearchParams?.token,
+        token: searchParams?.token,
       }),
     }
   );
@@ -115,13 +114,8 @@ async function getDrupalData({
   return { node: data.route.entity };
 }
 
-export default async function Page({
-  params,
-  searchParams,
-}: {
-  params: { slug: string[] };
-  searchParams: Record<string, string>;
-}) {
+// ✅ Explicitly set the type for params and searchParams
+export default async function Page({ params, searchParams }: { params: { slug: string[] }; searchParams: Record<string, string> }) {
   const { node } = await getDrupalData({ params, searchParams });
 
   return (
@@ -130,11 +124,11 @@ export default async function Page({
         {node.title}
       </h1>
       {node.image && (
-        <img
+        <Image
           src={node.image.url}
           alt={node.image.alt}
-          width={node.image.width}
-          height={node.image.height}
+          width={node.image.width || 800}
+          height={node.image.height || 600}
           className="mb-6 mx-auto max-w-lg"
         />
       )}
